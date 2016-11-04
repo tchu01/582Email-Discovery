@@ -8,25 +8,20 @@ from scrape_mbox import scrape, path_to_takeout1, path_to_takeout2
 def popular_ngrams(candidate_dict, cand=None):
     if not cand:
         cand = 'Unknown'
-    top_trigrams = []
-    top_fourgrams = []
-    top_fivegrams = []
+    trigrams = []
+    fourgrams = []
+    fivegrams = []
     for date, email in candidate_dict.items():
         if email['word_tokens']:
-            trigrams = nltk.trigrams(email['word_tokens'])
-            top_trigrams.extend(map(lambda x: x[0], nltk.FreqDist(trigrams).most_common(5)))
-
-            fourgrams = nltk.ngrams(email['word_tokens'], 4)
-            top_fourgrams.extend(map(lambda x: x[0], nltk.FreqDist(fourgrams).most_common(5)))
-
-            fivegrams = nltk.ngrams(email['word_tokens'], 5)
-            top_fivegrams.extend(map(lambda x: x[0], nltk.FreqDist(fivegrams).most_common(5)))
+            trigrams.extend(nltk.trigrams(email['word_tokens']))
+            fourgrams.extend(nltk.ngrams(email['word_tokens'], 4))
+            fivegrams.extend(nltk.ngrams(email['word_tokens'], 5))
 
         else:
             print("Email had no payload")
 
-    print(cand)
-    print('trigrams: {}'.format(', '.join(map(str, top_trigrams))))
+    print('Candidate: {}'.format(cand))
+    print('trigrams: {}'.format(', '.join(map(str, map(lambda x: x[0], nltk.FreqDist(trigrams).most_common(5))))))
 
 
 if __name__ == '__main__':
