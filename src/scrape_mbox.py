@@ -15,21 +15,27 @@ def scrape(mbox_filename):
       date = message['date']
       subject = message['subject']
       payload = message.get_payload()      
-      #text_payload = clean_payload(str(payload[0]))
-      text_payload = getbody(message)
+      text_payload = get_body(message)
 
       candidate_dict[date] = {}
       candidate_dict[date]['subject'] = subject
       candidate_dict[date]['payload'] = text_payload
+      if text_payload is not None:
+         candidate_dict[date]['word_tokens'] = nltk.word_tokenize(text_payload)
+      else:
+         candidate_dict[date]['word_tokens'] = None 
 
-      print("Date: " + str(date))
-      print("Subject: " + str(subject))
-      print("Payload: " + str(text_payload))
-      break
+      #print("Date: " + str(date))
+      #print("Subject: " + str(subject))
+      #print("Payload: " + str(text_payload))
+      #print("Tokens: " + str(nltk.word_tokenize(text_payload)))
+      #print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
+      #break
 
-   print(dict(candidate_dict))
+   #print(dict(candidate_dict))
+   return candidate_dict
 
-def getbody(message): #getting plain text 'email body'
+def get_body(message): 
    body = None
    if message.is_multipart():
       for part in message.walk():
@@ -42,17 +48,15 @@ def getbody(message): #getting plain text 'email body'
    elif message.get_content_type() == 'text/plain':
       body = message.get_payload(decode=True)
 
-   return body
-
-def clean_payload(payload):
-   #clean = payload
-   clean = payload.replace("(=..)", "")  
-   return clean
-
+   if body is not None:
+      #print("PAYLOAD: " + str(body.decode('UTF-8')))
+      return body.decode('UTF-8', errors='replace')
+   else:
+      return None
 
 if __name__ == '__main__':
    takeout1_mboxes = [path_to_takeout1 + "/" + f for f in listdir(path_to_takeout1)]
    takeout2_mboxes = [path_to_takeout2 + "/" + f for f in listdir(path_to_takeout2)]
    
-   print("Looking at mbox: " + str(takeout1_mboxes[0]))
+   #print("Looking at mbox: " + str(takeout1_mboxes[0]))
    scrape(takeout1_mboxes[0])
