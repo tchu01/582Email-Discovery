@@ -13,8 +13,7 @@ def scrape(mbox_filename):
     for message in mbox:
         date = message['date']
         subject = message['subject']
-        payload = message.get_payload()
-        text_payload = remove_links(get_body(message))
+        text_payload = clean_body(get_body(message))
 
         candidate_dict[date] = {}
         candidate_dict[date]['subject'] = subject
@@ -36,6 +35,7 @@ def scrape(mbox_filename):
 
     return candidate_dict
 
+# Returns decoded string for the body of the email
 def get_body(message):
     body = None
     if message.is_multipart():
@@ -50,15 +50,21 @@ def get_body(message):
         body = message.get_payload(decode=True)
 
     if body is not None:
-        # print("PAYLOAD: " + str(body.decode('UTF-8')))
+        # print("PAYLOAD1: " + str(body))
+        # print("PAYLOAD2: " + str(body.decode('UTF-8')))
         return body.decode('UTF-8', errors='replace')
     else:
         return None
 
-def remove_links(payload):
+def clean_body(payload):
     if payload is not None:
-        temp = re.sub("(<(.*)>)", "", payload)
-        temp = re.sub("((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?", "", temp).replace("<>", "")
+        temp = re.sub("(<(.*)>)", " ", payload)
+        temp = re.sub("((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?", " ", temp).replace("<>", "")
+
+        temp = re.sub("&#x?[a-fA-F0-9]+;", " ", temp)
+        temp = re.sub("\\r\\n", " ", temp)
+        temp = re.sub("\\t", " ", temp)
+        temp = re.sub("98xjsmith@gmail.com", " ", temp)
         return temp
     else:
         return payload
