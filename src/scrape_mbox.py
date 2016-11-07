@@ -1,39 +1,54 @@
 import os, sys, nltk, re
 import mailbox
 from os import listdir
-from collections import defaultdict
+import pickle
 
 path_to_takeout1 = os.path.abspath("../data/Takeout1/Mail")
 path_to_takeout2 = os.path.abspath("../data/Takeout2/Mail")
+cache_dir = '../.cache'
+
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+
 
 def scrape(mbox_filename):
-    candidate_dict = {}
-    mbox = mailbox.mbox(mbox_filename)
+    if os.path.exists(
+            os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p')):
+        candidate_dict = pickle.load(
+            open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p'),
+                 'rb'))
 
-    for message in mbox:
-        date = message['date']
-        subject = message['subject']
-        text_payload = clean_body(get_body(message))
+    else:
+        candidate_dict = {}
+        mbox = mailbox.mbox(mbox_filename)
 
-        candidate_dict[date] = {}
-        candidate_dict[date]['subject'] = subject
-        candidate_dict[date]['payload'] = text_payload
+        for message in mbox:
+            date = message['date']
+            subject = message['subject']
+            text_payload = clean_body(get_body(message))
 
-        if text_payload:
-            candidate_dict[date]['word_tokens'] = nltk.word_tokenize(text_payload)
-            candidate_dict[date]['sent_tokens'] = nltk.sent_tokenize(text_payload)
-        else:
-            candidate_dict[date]['word_tokens'] = None
-            candidate_dict[date]['sent_tokens'] = None
+            candidate_dict[date] = {}
+            candidate_dict[date]['subject'] = subject
+            candidate_dict[date]['payload'] = text_payload
 
-        # print("Date: " + str(date))
-        # print("Subject: " + str(subject))
-        # print("Payload: " + str(candidate_dict[date]['without_links']))
-        # print("Tokens: " + str(nltk.word_tokenize(text_payload)))
-        # print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
-        # break
+            if text_payload:
+                candidate_dict[date]['word_tokens'] = nltk.word_tokenize(text_payload)
+                candidate_dict[date]['sent_tokens'] = nltk.sent_tokenize(text_payload)
+            else:
+                candidate_dict[date]['word_tokens'] = None
+                candidate_dict[date]['sent_tokens'] = None
+
+                # print("Date: " + str(date))
+                # print("Subject: " + str(subject))
+                # print("Payload: " + str(candidate_dict[date]['without_links']))
+                # print("Tokens: " + str(nltk.word_tokenize(text_payload)))
+                # print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
+                # break
+        pickle.dump(candidate_dict, open(
+            os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p'), 'wb'))
 
     return candidate_dict
+
 
 # Returns decoded string for the body of the email
 def get_body(message):
@@ -56,11 +71,13 @@ def get_body(message):
     else:
         return None
 
+
 def clean_body(payload):
     if payload is not None:
         # Remove links
         temp = re.sub("(<(.*)>)", " ", payload)
-        temp = re.sub("((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?", " ", temp).replace("<>", "")
+        temp = re.sub("((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?", " ",
+                      temp).replace("<>", "")
 
         # Remove usual encodings (ex: "&#xA0;, \r\n. \t) 
         temp = re.sub("&#x?[a-fA-F0-9]+;", " ", temp)
@@ -76,9 +93,12 @@ def clean_body(payload):
     else:
         return payload
 
+
 if __name__ == '__main__':
     takeout1_mboxes = [path_to_takeout1 + "/" + f for f in listdir(path_to_takeout1)]
     takeout2_mboxes = [path_to_takeout2 + "/" + f for f in listdir(path_to_takeout2)]
 
     # print("Looking at mbox: " + str(takeout1_mboxes[0]))
-    scrape(takeout1_mboxes[0])
+    mbox = scrape(takeout1_mboxes[0])
+    for date, email in mbox.items():
+        print(email['sent_tokens'])
