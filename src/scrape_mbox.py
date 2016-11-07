@@ -74,13 +74,20 @@ def get_body(message):
 
 def clean_body(payload):
     if payload is not None:
+        # Remove links
         temp = re.sub("(<(.*)>)", " ", payload)
         temp = re.sub("((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?", " ",
                       temp).replace("<>", "")
 
+        # Remove usual encodings (ex: "&#xA0;, \r\n. \t) 
         temp = re.sub("&#x?[a-fA-F0-9]+;", " ", temp)
         temp = re.sub("\\r\\n", " ", temp)
-        temp = re.sub("\\t", " ", temp)
+        temp = re.sub("(\\t|\\n|\\r)", " ", temp)
+        temp = re.sub("\\xa0", " ", temp)
+        #temp = re.sub("\\u200", " ", temp)
+        temp = re.sub("(\s)+", " ", temp)
+
+        # Remove receiving email address
         temp = re.sub("98xjsmith@gmail.com", " ", temp)
         return temp
     else:
