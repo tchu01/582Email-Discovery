@@ -4,6 +4,7 @@ import numpy as np
 import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
+from nltk.sentiment import SentimentIntensityAnalyzer
 from scrape_mbox import scrape
 from collections import defaultdict
 from sklearn.pipeline import Pipeline
@@ -33,34 +34,42 @@ def show(data_dir=_data_dir):
     cand_ids = set(mb.split('/')[-1].split('.')[0].split('-')[-1].lower() for mb in mailboxes)
     cand_data = map(scrape, mailboxes)
     cand_dict = defaultdict(list)
+    sa = SentimentIntensityAnalyzer()
 
     for n, data in enumerate(cand_data):
         cand = mailboxes[n].split('/')[-1].split('.')[0].split('-')[-1].lower()
         for date, email in data.items():
             if email:
-                if email['word_tokens']:
+                if email['sent_tokens']:
                     X_ = [0 for _ in range(len(cand_ids))]
-                    fd = nltk.FreqDist([x.lower() for x in email['word_tokens']])
-                    for n_, cand_ in enumerate(cand_ids):
-                        if cand_ != cand:
-                            X_[n_] = float(fd[cand_])
-
+                    for sent in [x.lower() for x in email['sent_tokens']]:
+                        for n_, cand_ in enumerate(cand_ids):
+                            if cand_ in sent:
+                                X_[n_] += sa.polarity_scores(sent)['compound']
                     cand_dict[cand].append(X_)
 
     data_ = []
     index = []
+    a = -1
+    b = 1
 
     for cand_id, data in cand_dict.items():
-        d_ = np.asarray(data).sum(axis=0)
-        d_ /= sum(d_)
+        d = np.asarray(data).sum(axis=0)
+        d_ = ((b - a) * (d - d.min())) / (d.max() - d.min())
+        d_ += a
+        d_[np.where(d == 0)] = 0
         data_.append(d_.tolist())
         index.append(cand_id)
 
-    df = pd.DataFrame(data_, index=index, columns=list(cand_ids))
-    df.plot.bar(colormap='Set1')
-    plt.xlabel('candidate')
-    plt.ylabel('mention distribution')
-    plt.show()
+    df = pd.DataFrame(data_, index=index, columns=cand_ids)
+    ax = df.plot.bar(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
+
+    ax.set_xlabel('candidate')
+    ax.set_ylabel('sentiment')
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True, ncol=1)
+    plt.savefig('../results/sentiment.png')
     plt.close()
 
     X = []
@@ -85,9 +94,9 @@ def show(data_dir=_data_dir):
         y_true.extend(y_test)
         y_predicted.extend(pipe.predict(X_test))
 
-    print(classification_report(y_true, y_predicted))
-
-    print('Accuracy: {:.4f}'.format(sum([1 if x == y else 0 for x, y in zip(y_true, y_predicted)]) / len(y_true)))
+    with open('../results/sentiment.txt', 'w') as f:
+        f.write(classification_report(y_true, y_predicted))
+        f.write('Accuracy: {:.4f}'.format(sum([1 if x == y else 0 for x, y in zip(y_true, y_predicted)]) / len(y_true)))
 
 
 if __name__ == '__main__':
