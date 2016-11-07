@@ -59,7 +59,7 @@ def show(data_dir=_data_dir):
     df = pd.DataFrame(data_, index=index, columns=list(cand_ids))
     df.plot.bar(colormap='Set1')
     plt.xlabel('candidate')
-    plt.ylabel('mentions (mean)')
+    plt.ylabel('mention distribution')
     plt.show()
     plt.close()
 
