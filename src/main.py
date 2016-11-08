@@ -4,7 +4,30 @@ from os import listdir
 from os.path import join
 from scrape_mbox import scrape, path_to_takeout1, path_to_takeout2, path_to_takeout3
 
+candidates_clean_list = {'trump': ['donald', 'j.', 'trump', 'email', 'emails'],
+                         'clinton': ['hillary', 'clinton', 'email', 'emails'],
+                         'sanders': ['bernie', 'sanders', 'email', 'emails'],
+                         'bush': ['jeb', 'bush', 'email', 'emails'],
+                         'carson': ['ben', 'carson', 'email', 'emails'],
+                         'christie': ['chris', 'christie', 'email', 'emails'],
+                         'cruz': ['ted', 'cruz', 'email', 'emails'],
+                         'fiorina': ['carly', 'fiorina', 'email', 'emails'],
+                         'kasich': ['john', 'kasich', 'email', 'emails'],
+                         'paul': ['rand', 'paul', 'email', 'emails'],
+                         'rubio': ['marco', 'rubio', 'email', 'emails'],
+                         'santorum': ['rick', 'santorum', 'email', 'emails']}
+
+def clean_fourgrams(fourgrams, cand):
+    fourgrams = [(fourgram[0].lower(), fourgram[1].lower(), fourgram[2].lower(), fourgram[3].lower()) for fourgram in fourgrams]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[0] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[1] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[2] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[3] not in candidates_clean_list[cand.lower()]]
+    
+    return fourgrams
+
 def extract_features1(candidate_messages, cand):
+    print("Extracting features for cand: " + str(cand))
     words = []
     for date, email_dict in candidate_messages:
         if email_dict['word_tokens'] is not None:
@@ -21,10 +44,12 @@ def extract_features1(candidate_messages, cand):
     '''
 
     trigrams, fourgrams, fivegrams = popular_ngrams(candidate_messages, cand)
-    trigrams = [(trigram[0].lower(), trigram[1].lower(), trigram[2].lower()) for trigram in trigrams]
-    fourgrams = [(fourgram[0].lower(), fourgram[1].lower(), fourgram[2].lower(), fourgram[3].lower()) for fourgram in fourgrams]
-    for fourgram, count in nltk.FreqDist(fourgrams).most_common()[:10]:
-        print(fourgram)
+    # trigrams = [(trigram[0].lower(), trigram[1].lower(), trigram[2].lower()) for trigram in trigrams]
+    # clean fourgrams
+    fourgrams = fourgrams[:-100]
+    fourgrams = clean_fourgrams(fourgrams, cand)
+    for fourgram, count in nltk.FreqDist(fourgrams).most_common()[:15]:
+        print((fourgram, count))
         features[fourgram] = True
 
     return features
@@ -52,7 +77,7 @@ def exercise1(train, test):
 
     classifier = nltk.NaiveBayesClassifier.train(processed_train)
     print("Accuracy: " + str(nltk.classify.accuracy(classifier, processed_test)))
-    print(classifier.show_most_informative_features(20))
+    # print(classifier.show_most_informative_features(20))
 
 def popular_ngrams(candidate_messages, cand=None):
     if not cand:
