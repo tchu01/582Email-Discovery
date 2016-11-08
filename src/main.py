@@ -4,6 +4,7 @@ from os import listdir
 from os.path import join
 from scrape_mbox import scrape, path_to_takeout1, path_to_takeout2
 
+
 def extract_features1(candidate_tuple):
     print(candidate_tuple[1])
     words = []
@@ -44,6 +45,7 @@ def extract_features1(candidate_tuple):
 
     return features
 
+
 def exercise1(train, test):
     train = [(extract_features1(candidate_tuple), candidate_tuple[1]) for candidate_tuple in train]
     print()
@@ -51,6 +53,7 @@ def exercise1(train, test):
 
     classifier = nltk.NaiveBayesClassifier.train(train)
     print("Accuracy: " + str(nltk.classify.accuracy(classifier, test)))
+
 
 def popular_ngrams(candidate_dict, cand=None):
     if not cand:
@@ -73,6 +76,7 @@ def popular_ngrams(candidate_dict, cand=None):
     # print('fivegrams: {}'.format(', '.join(map(str, map(lambda x: x[0], nltk.FreqDist(fivegrams).most_common(5))))))
     
     return trigrams, fourgrams, fivegrams
+
 
 def money_talk(candidate_dict, cand=None):
     if not cand:
@@ -108,4 +112,4 @@ if __name__ == '__main__':
         candidate_tuple = (scrape(mbox), cand)
         test.append(candidate_tuple)
 
-    exercise1(train,test)    
+    exercise1(train, test)

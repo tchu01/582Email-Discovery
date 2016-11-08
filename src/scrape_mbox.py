@@ -11,12 +11,9 @@ if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
 
 
-def scrape(mbox_filename):
-    if os.path.exists(
-            os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p')):
-        candidate_dict = pickle.load(
-            open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p'),
-                 'rb'))
+def scrape(mbox_filename, rebuild=False):
+    if os.path.exists(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p')) and not rebuild:
+        candidate_dict = pickle.load(open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p'), 'rb'))
 
     else:
         candidate_dict = {}
@@ -44,8 +41,7 @@ def scrape(mbox_filename):
                 # print("Tokens: " + str(nltk.word_tokenize(text_payload)))
                 # print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
                 # break
-        pickle.dump(candidate_dict, open(
-            os.path.join(cache_dir, os.path.basename(mbox_filename) + '_' + mbox_filename.split('/')[2] + '.p'), 'wb'))
+        pickle.dump(candidate_dict, open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p'), 'wb'))
 
     return candidate_dict
 
