@@ -5,6 +5,7 @@ import pickle
 
 path_to_takeout1 = os.path.abspath("../data/Takeout1/Mail")
 path_to_takeout2 = os.path.abspath("../data/Takeout2/Mail")
+path_to_takeout3 = os.path.abspath("../data/Takeout 3/Mail")
 cache_dir = '../.cache'
 
 if not os.path.exists(cache_dir):

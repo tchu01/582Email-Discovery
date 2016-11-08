@@ -1,67 +1,91 @@
-import nltk, mailbox
+import nltk, mailbox, numpy
 from nltk.corpus import stopwords as sw
 from os import listdir
 from os.path import join
-from scrape_mbox import scrape, path_to_takeout1, path_to_takeout2
+from scrape_mbox import scrape, path_to_takeout1, path_to_takeout2, path_to_takeout3
 
+candidates_clean_list = {'trump': ['donald', 'j.', 'trump', 'email', 'emails'],
+                         'clinton': ['hillary', 'clinton', 'email', 'emails'],
+                         'sanders': ['bernie', 'sanders', 'email', 'emails'],
+                         'bush': ['jeb', 'bush', 'email', 'emails'],
+                         'carson': ['ben', 'carson', 'email', 'emails'],
+                         'christie': ['chris', 'christie', 'email', 'emails'],
+                         'cruz': ['ted', 'cruz', 'email', 'emails'],
+                         'fiorina': ['carly', 'fiorina', 'email', 'emails'],
+                         'kasich': ['john', 'kasich', 'email', 'emails'],
+                         'paul': ['rand', 'paul', 'email', 'emails'],
+                         'rubio': ['marco', 'rubio', 'email', 'emails'],
+                         'santorum': ['rick', 'santorum', 'email', 'emails']}
 
-def extract_features1(candidate_tuple):
-    print(candidate_tuple[1])
+def clean_fourgrams(fourgrams, cand):
+    fourgrams = [(fourgram[0].lower(), fourgram[1].lower(), fourgram[2].lower(), fourgram[3].lower()) for fourgram in fourgrams]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[0] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[1] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[2] not in candidates_clean_list[cand.lower()]]
+    fourgrams = [fourgram for fourgram in fourgrams if fourgram[3] not in candidates_clean_list[cand.lower()]]
+    
+    return fourgrams
+
+def extract_features1(candidate_messages, cand):
+    print("Extracting features for cand: " + str(cand))
     words = []
-    for date, email in candidate_tuple[0].items():
-        if candidate_tuple[0][date]['word_tokens'] is not None:
-            for word in candidate_tuple[0][date]['word_tokens']:
+    for date, email_dict in candidate_messages:
+        if email_dict['word_tokens'] is not None:
+            for word in email_dict['word_tokens']:
                 words.append(word.lower())
 
     features = {}
+    '''
     # lex_div gives accuracy of .416
     lex_div = len(set(words))/len(words)
-    # print("len of set: " + str(len(set(words))) + " len words: " + str(len(words)) + " lex: " + str(lex_div))
+    print("len of set: " + str(len(set(words))) + " len words: " + str(len(words)) + " lex: " + str(lex_div))
 
-    if lex_div <= 0.05:
-        features['lex_div'] = 1
-    elif lex_div > 0.05 and lex_div <= 0.065:
-        features['lex_div'] = 2
-    elif lex_div > 0.065 and lex_div <= 0.08:
-        features['lex_div'] = 3
-    elif lex_div > 0.08 and lex_div <= 0.095:
-        features['lex_div'] = 4
-    elif lex_div > 0.095 and lex_div <= 0.11:
-        features['lex_div'] = 5
-    elif lex_div > 0.11 and lex_div <= 0.125:
-        features['lex_div'] = 6
-    elif lex_div > 0.125 and lex_div <= 0.140:
-        features['lex_div'] = 7
-    elif lex_div > 0.140 and lex_div <= 0.155:
-        features['lex_div'] = 8
-    else:
-        features['lex_div'] = 9
+    features['lex_div'] = lex_div
+    '''
 
-    trigrams, fourgrams, fivegrams = popular_ngrams(candidate_tuple[0], candidate_tuple[1])
-    trigrams = [(trigram[0].lower(), trigram[1].lower(), trigram[2].lower()) for trigram in trigrams]
-    fourgrams = [(fourgram[0].lower(), fourgram[1].lower(), fourgram[2].lower(), fourgram[3].lower()) for fourgram in fourgrams]
-    for fourgram, count in nltk.FreqDist(fourgrams).most_common()[10:20]:
+    trigrams, fourgrams, fivegrams = popular_ngrams(candidate_messages, cand)
+    # trigrams = [(trigram[0].lower(), trigram[1].lower(), trigram[2].lower()) for trigram in trigrams]
+    # clean fourgrams
+    fourgrams = fourgrams[:-100]
+    fourgrams = clean_fourgrams(fourgrams, cand)
+    for fourgram, count in nltk.FreqDist(fourgrams).most_common()[:15]:
+        print((fourgram, count))
         features[fourgram] = True
 
     return features
 
 
 def exercise1(train, test):
+    processed_train = []
+    processed_test = []
+
+    for candidate_messages, cand in train:
+        if len(candidate_messages) > 0:
+            processed_train.append((extract_features1(candidate_messages, cand), cand))
+
+    print()
+
+    for candidate_messages, cand in test:
+        if len(candidate_messages) > 0:
+            processed_test.append((extract_features1(candidate_messages, cand), cand))
+
+    '''
     train = [(extract_features1(candidate_tuple), candidate_tuple[1]) for candidate_tuple in train]
     print()
     test = [(extract_features1(candidate_tuple), candidate_tuple[1]) for candidate_tuple in test]
+    '''
 
-    classifier = nltk.NaiveBayesClassifier.train(train)
-    print("Accuracy: " + str(nltk.classify.accuracy(classifier, test)))
+    classifier = nltk.NaiveBayesClassifier.train(processed_train)
+    print("Accuracy: " + str(nltk.classify.accuracy(classifier, processed_test)))
+    # print(classifier.show_most_informative_features(20))
 
-
-def popular_ngrams(candidate_dict, cand=None):
+def popular_ngrams(candidate_messages, cand=None):
     if not cand:
         cand = 'Unknown'
     trigrams = []
     fourgrams = []
     fivegrams = []
-    for date, email in candidate_dict.items():
+    for date, email in candidate_messages:
         if email['word_tokens']:
             trigrams.extend(nltk.trigrams(email['word_tokens']))
             fourgrams.extend(nltk.ngrams(email['word_tokens'], 4))
@@ -95,21 +119,52 @@ def money_talk(candidate_dict, cand=None):
 if __name__ == '__main__':
     takeout1_mboxes = [(join(path_to_takeout1, f), f.split('.')[0].split('-')[-1]) for f in listdir(path_to_takeout1)]
     takeout2_mboxes = [(join(path_to_takeout2, f), f.split('.')[0].split('-')[-1]) for f in listdir(path_to_takeout2)]
+    takeout3_mboxes = [(join(path_to_takeout3, f), f.split('.')[0].split('-')[-1]) for f in listdir(path_to_takeout3)]
 
-    train = []
-    test = []
-
+    '''
+    cands1 = []
+    print("Takeout1")
     for mbox, cand in takeout1_mboxes:
         candidate_tuple = (scrape(mbox), cand)
-        train.append(candidate_tuple)
+        cands1.append(candidate_tuple)
+        
+        print("Candidate: " + candidate_tuple[1])
+        print(len(candidate_tuple[0]))
 
         # 1
         #popular_ngrams(candidate_dict, cand)
         # 2
         #money_talk(candidate_dict, cand) 
 
+    cands2 = []
+    print()
+    print("Takeout2")
     for mbox, cand in takeout2_mboxes:
         candidate_tuple = (scrape(mbox), cand)
-        test.append(candidate_tuple)
+        cands2.append(candidate_tuple)
+
+        print("Candidate: " + candidate_tuple[1])
+        print(len(candidate_tuple[0]))
+    '''
+    
+    cands = []
+    train = []
+    test = []
+    print("Takeout3")
+    for mbox, cand in takeout3_mboxes:
+        candidate_tuple = (scrape(mbox), cand)
+        cands.append(candidate_tuple)
+
+        print("Candidate: " + candidate_tuple[1])
+        print(len(candidate_tuple[0]))
+
+    for cand_dict, cand in cands:
+        split = len(cand_dict) // 3
+        items = list(cand_dict.items())
+        
+        train.append((items[split:], cand))
+        test.append((items[:split], cand))
+    
+    #print(test[12])
 
     exercise1(train, test)
