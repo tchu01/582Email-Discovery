@@ -29,6 +29,7 @@ def extract_features1(candidate_messages, cand):
 
     return features
 
+
 def exercise1(train, test):
     processed_train = []
     processed_test = []
@@ -74,6 +75,7 @@ def popular_ngrams(candidate_messages, cand=None):
     # print('fivegrams: {}'.format(', '.join(map(str, map(lambda x: x[0], nltk.FreqDist(fivegrams).most_common(5))))))
     
     return trigrams, fourgrams, fivegrams
+
 
 def money_talk(candidate_dict, cand=None):
     if not cand:
@@ -140,4 +142,4 @@ if __name__ == '__main__':
     
     #print(test[12])
 
-    exercise1(train,test)    
+    exercise1(train, test)

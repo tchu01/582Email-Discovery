@@ -14,23 +14,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 
-_data_dir = '../data/'
-
-
-def _walk(dir_path):
-    result = []
-
-    for dirpath, dirnames, filenames in os.walk(dir_path):
-        for dn in dirnames:
-            _walk(os.path.join(dirpath, dn))
-
-        result.extend([os.path.join(dirpath, fn) for fn in filenames if re.match('(Republicans|Democrats).*', fn)])
-
-    return result
+_data_dir = '../data/Takeout 3/Mail'
 
 
 def show(data_dir=_data_dir):
-    mailboxes = _walk(data_dir)
+    mailboxes = [os.path.join(_data_dir, d) for d in os.listdir(_data_dir)]
     cand_ids = set(mb.split('/')[-1].split('.')[0].split('-')[-1].lower() for mb in mailboxes)
     cand_data = map(scrape, mailboxes)
     cand_dict = defaultdict(list)
@@ -62,7 +50,7 @@ def show(data_dir=_data_dir):
         index.append(cand_id)
 
     df = pd.DataFrame(data_, index=index, columns=cand_ids)
-    ax = df.plot.bar(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
+    ax = df.plot(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
 
     ax.set_xlabel('candidate')
     ax.set_ylabel('sentiment')
@@ -76,8 +64,10 @@ def show(data_dir=_data_dir):
     y = []
 
     for cand_id, data in cand_dict.items():
-        X.extend(data)
-        y.extend([cand_id for _ in range(len(data))])
+        d_ = np.asarray(data)
+        idcs = np.random.choice(range(d_.shape[0]), 10)
+        X.extend(d_[idcs].tolist())
+        y.extend([cand_id for _ in range(10)])
 
     X = np.asarray(X)
     y = np.asarray(y)
