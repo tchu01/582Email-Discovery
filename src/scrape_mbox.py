@@ -12,36 +12,40 @@ if not os.path.exists(cache_dir):
 
 
 def scrape(mbox_filename, rebuild=False):
-    if os.path.exists(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p')) and not rebuild:
-        candidate_dict = pickle.load(open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p'), 'rb'))
+    candidate_dict = None
+    m = re.match('.*(Takeout\s?\d)', mbox_filename)
+    if m:
+        mb = m.group(1)
+        if os.path.exists(os.path.join(cache_dir, os.path.basename(mbox_filename) + mb + '.p')) and not rebuild:
+            candidate_dict = pickle.load(open(os.path.join(cache_dir, os.path.basename(mbox_filename) + mb + '.p'), 'rb'))
 
-    else:
-        candidate_dict = {}
-        mbox = mailbox.mbox(mbox_filename)
+        else:
+            candidate_dict = {}
+            mbox = mailbox.mbox(mbox_filename)
 
-        for message in mbox:
-            date = message['date']
-            subject = message['subject']
-            text_payload = clean_body(get_body(message))
+            for message in mbox:
+                date = message['date']
+                subject = message['subject']
+                text_payload = clean_body(get_body(message))
 
-            candidate_dict[date] = {}
-            candidate_dict[date]['subject'] = subject
-            candidate_dict[date]['payload'] = text_payload
+                candidate_dict[date] = {}
+                candidate_dict[date]['subject'] = subject
+                candidate_dict[date]['payload'] = text_payload
 
-            if text_payload:
-                candidate_dict[date]['word_tokens'] = nltk.word_tokenize(text_payload)
-                candidate_dict[date]['sent_tokens'] = nltk.sent_tokenize(text_payload)
-            else:
-                candidate_dict[date]['word_tokens'] = None
-                candidate_dict[date]['sent_tokens'] = None
+                if text_payload:
+                    candidate_dict[date]['word_tokens'] = nltk.word_tokenize(text_payload)
+                    candidate_dict[date]['sent_tokens'] = nltk.sent_tokenize(text_payload)
+                else:
+                    candidate_dict[date]['word_tokens'] = None
+                    candidate_dict[date]['sent_tokens'] = None
 
-                # print("Date: " + str(date))
-                # print("Subject: " + str(subject))
-                # print("Payload: " + str(candidate_dict[date]['without_links']))
-                # print("Tokens: " + str(nltk.word_tokenize(text_payload)))
-                # print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
-                # break
-        pickle.dump(candidate_dict, open(os.path.join(cache_dir, os.path.basename(mbox_filename) + '.p'), 'wb'))
+                    # print("Date: " + str(date))
+                    # print("Subject: " + str(subject))
+                    # print("Payload: " + str(candidate_dict[date]['without_links']))
+                    # print("Tokens: " + str(nltk.word_tokenize(text_payload)))
+                    # print("Bigrams: " + str(list(nltk.bigrams(candidate_dict[date]['word_tokens']))))
+                    # break
+            pickle.dump(candidate_dict, open(os.path.join(cache_dir, os.path.basename(mbox_filename) + mb + '.p'), 'wb'))
 
     return candidate_dict
 
