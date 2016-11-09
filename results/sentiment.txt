@@ -1,11 +1,11 @@
              precision    recall  f1-score   support
 
-   christie       0.49      0.47      0.48       100
-    clinton       0.00      0.00      0.00       100
-       cruz       0.91      0.10      0.18       100
-     kasich       0.50      0.02      0.04       100
-      rubio       0.12      0.01      0.02       100
-    sanders       0.30      0.20      0.24       100
-      trump       0.18      0.95      0.31       100
+   christie       0.84      0.90      0.87       100
+    clinton       0.45      0.84      0.59       100
+       cruz       0.92      0.97      0.95       100
+     kasich       0.95      0.59      0.73       100
+      rubio       1.00      0.76      0.86       100
+    sanders       0.73      0.49      0.59       100
+      trump       0.83      0.80      0.82       100
 
-avg / total       0.36      0.25      0.18       700
+avg / total       0.82      0.76      0.77       700

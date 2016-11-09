@@ -9,6 +9,7 @@ from scrape_mbox import scrape
 from collections import defaultdict
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
+from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report
@@ -34,7 +35,7 @@ def show(data_dirs=_data_dirs):
                     X_ = [0 for _ in range(len(cand_ids))]
                     for sent in [x.lower() for x in email['sent_tokens']]:
                         for n_, cand_ in enumerate(cand_ids):
-                            if cand_ in sent and cand_ != cand:
+                            if cand_ in sent:
                                 X_[n_] += sa.polarity_scores(sent)['compound']
                     cand_dict[cand].append(X_)
 
@@ -115,7 +116,7 @@ def show(data_dirs=_data_dirs):
     X = np.asarray(X)
     y = np.asarray(y)
 
-    pipe = Pipeline([('scale', StandardScaler()), ('clf', LinearSVC())])
+    pipe = Pipeline([('scale', StandardScaler()), ('clf', LinearSVC(max_iter=10000))])
 
     y_true = []
     y_predicted = []
