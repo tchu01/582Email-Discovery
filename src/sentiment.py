@@ -58,6 +58,8 @@ def show(data_dirs=_data_dirs):
     ax = df.plot(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
     ax.set_xlabel('candidate')
     ax.set_ylabel('sentiment')
+    ax.set_xticks(np.arange(len(cand_ids)))
+    ax.set_xticklabels(cand_ids)
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True, ncol=1)
