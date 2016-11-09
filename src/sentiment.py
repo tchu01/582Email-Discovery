@@ -51,8 +51,32 @@ def show(data_dirs=_data_dirs):
     # this makes a flat line for each candidates average sentiment. we might want to plot this
     values = np.asarray(data_).mean(axis=0)
     values = (((5 + 5) * (values - values.min())) / (values.max() - values.min())) - 5
-    x_ = sorted(range(values.size), key=lambda n: values[n])
-    
+    x_ = sorted(range(values.size), key=lambda n_: values[n_])
+    ax = plt.axes()
+    ax.scatter(values[x_], [.5] * len(x_), c=values, s=100, cmap=plt.get_cmap('Spectral'))
+
+    xytext_locs = [(x, y) for x, y in zip([-20, 20] * (len(cand_ids) // 2), [-150, -100, 100, 150] * (len(cand_ids) // 4))]
+
+    for (label, x), xytext in zip(zip(np.asarray(cand_ids)[x_], values[x_]), xytext_locs):
+        plt.annotate(
+            label,
+            xy=(x, .5), xytext=xytext,
+            textcoords='offset points', ha='right', va='bottom',
+            bbox=dict(boxstyle='round,pad=0.5', fc='blue', alpha=.5),
+            arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
+        )
+
+
+    ax.yaxis.set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.get_yaxis().set_ticklabels([])
+    plt.savefig('../results/sentiment_flat.png')
+    plt.clf()
+
+
     # plot each candidates sentiment line
     df = pd.DataFrame(data_, columns=cand_ids, index=cand_ids)
     ax = df.plot(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
@@ -64,6 +88,16 @@ def show(data_dirs=_data_dirs):
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True, ncol=1)
     plt.savefig('../results/sentiment.png')
+    plt.clf()
+    ax = df.plot.bar(colormap='Set1', figsize=(16, 10), title='Candidate Sentiments')
+    ax.set_xlabel('candidate')
+    ax.set_ylabel('sentiment')
+    ax.set_xticks(np.arange(len(cand_ids)))
+    ax.set_xticklabels(cand_ids)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True, ncol=1)
+    plt.savefig('../results/sentiment_bar.png')
     plt.clf()
 
     X = []
